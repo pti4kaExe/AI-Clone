@@ -214,3 +214,55 @@ textarea:focus {
     text-align: center;
     color: #718096;
 }
+/* Анимация аватара */
+.avatar-img.talking {
+    animation: talk 0.5s infinite alternate;
+    background: #4299e1;
+    color: white;
+}
+
+@keyframes talk {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.05); }
+}
+
+/* Голосовое управление */
+.voice-controls {
+    background: #ebf8ff;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.voice-btn {
+    font-size: 20px;
+    padding: 15px 30px;
+    margin-bottom: 10px;
+}
+
+.voice-status {
+    font-size: 14px;
+    color: #4a5568;
+    min-height: 20px;
+}
+
+.or-divider {
+    text-align: center;
+    margin: 20px 0;
+    color: #718096;
+    position: relative;
+}
+
+.or-divider:before,
+.or-divider:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 45%;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.or-divider:before { left: 0; }
+.or-divider:after { right: 0; }
