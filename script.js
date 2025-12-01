@@ -1,142 +1,173 @@
-// ============================================
-// 1. ДАННЫЕ И ПЕРЕМЕННЫЕ
-// ============================================
+// ==================== КОНСТАНТЫ И ПЕРЕМЕННЫЕ ====================
+let questions = []; // Все вопросы
+let currentQuestionIndex = 0; // Текущий вопрос
+let isRecording = false; // Идет запись?
+let mediaRecorder = null; // Для записи аудио
+let recognition = null; // Для распознавания речи
+let userVideoStream = null; // Поток видео пользователя
+let userAudioStream = null; // Поток аудио пользователя
 
-let questions = [];
-let currentQuestionIndex = 0;
-let isRecording = false;
-let mediaRecorder;
-let audioChunks = [];
-let recognition;
+// ==================== ЭЛЕМЕНТЫ HTML ====================
+// Находим все нужные элементы на странице
+const elements = {
+    hrQuestion: document.getElementById('hrQuestion'),
+    questionText: document.getElementById('questionText'),
+    userAnswer: document.getElementById('userAnswer'),
+    submitBtn: document.getElementById('submitAnswer'),
+    hintBtn: document.getElementById('getHint'),
+    nextBtn: document.getElementById('nextQuestion'),
+    feedbackSection: document.getElementById('feedbackSection'),
+    feedbackText: document.getElementById('feedbackText'),
+    tipsList: document.getElementById('tipsList'),
+    scoreBadge: document.getElementById('scoreBadge'),
+    progressFill: document.getElementById('progressFill'),
+    currentQuestionNum: document.getElementById('currentQuestionNum'),
+    totalQuestions: document.getElementById('totalQuestions'),
+    voiceBtn: document.getElementById('voiceBtn'),
+    voiceStatus: document.getElementById('voiceStatus'),
+    recordingIndicator: document.getElementById('recordingIndicator'),
+    userVideoBox: document.getElementById('userVideoBox'),
+    userVideo: document.getElementById('userVideo'),
+    startCameraBtn: document.getElementById('startCameraBtn'),
+    toggleMicBtn: document.getElementById('toggleMicBtn')
+};
 
-// ============================================
-// 2. ЭЛЕМЕНТЫ DOM (связь с HTML)
-// ============================================
-
-const hrQuestionEl = document.getElementById('hrQuestion');
-const userAnswerEl = document.getElementById('userAnswer');
-const submitBtn = document.getElementById('submitAnswer');
-const hintBtn = document.getElementById('getHint');
-const nextBtn = document.getElementById('nextQuestion');
-const feedbackEl = document.getElementById('feedback');
-const scoreValueEl = document.getElementById('scoreValue');
-const feedbackTextEl = document.getElementById('feedbackText');
-const tipsEl = document.getElementById('tips');
-const progressBarEl = document.getElementById('progressBar');
-const currentQuestionEl = document.getElementById('currentQuestion');
-const voiceBtn = document.getElementById('voiceBtn');
-const voiceStatus = document.getElementById('voiceStatus');
-
-// ============================================
-// 3. ЗАГРУЗКА ВОПРОСОВ
-// ============================================
-
+// ==================== ЗАГРУЗКА ВОПРОСОВ ====================
 async function loadQuestions() {
+    console.log('🔄 Загружаю вопросы...');
     try {
         const response = await fetch('questions.json');
+        if (!response.ok) throw new Error('Ошибка загрузки файла');
+        
         questions = await response.json();
-        console.log('✅ Загружено вопросов:', questions.length);
-        updateQuestion();
+        console.log(`✅ Загружено ${questions.length} вопросов`);
+        
+        // Обновляем счетчик вопросов
+        elements.totalQuestions.textContent = questions.length;
+        
+        // Показываем первый вопрос
+        showQuestion();
+        
     } catch (error) {
         console.error('❌ Ошибка загрузки вопросов:', error);
-        // Резервные вопросы на случай ошибки
-        questions = [
-            {
-                question: "Расскажите о себе",
-                category: "soft skills",
-                good_answer: "Я разработчик с опытом...",
-                tips: ["Будь конкретным", "Свяжи с вакансией"]
-            }
-        ];
-        updateQuestion();
+        alert('Не удалось загрузить вопросы. Проверьте файл questions.json');
+        
+        // Создаем тестовый вопрос на случай ошибки
+        questions = [{
+            question: "Расскажите о себе",
+            category: "soft skills",
+            good_answer: "Я разработчик с 3 годами опыта...",
+            tips: ["Будьте конкретны", "Свяжите с вакансией", "Упомяните достижения"]
+        }];
+        showQuestion();
     }
 }
 
-// ============================================
-// 4. ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
-// ============================================
-
-function updateQuestion() {
+// ==================== ПОКАЗ ВОПРОСА ====================
+function showQuestion() {
     if (!questions.length) return;
     
     const question = questions[currentQuestionIndex];
-    hrQuestionEl.innerHTML = `
-        <strong>Вопрос ${currentQuestionIndex + 1}:</strong> ${question.question}
-        <br><small>Категория: ${question.category}</small>
-    `;
     
-    // Сброс формы
-    userAnswerEl.value = '';
-    feedbackEl.classList.add('hidden');
-    voiceStatus.textContent = 'Готов к записи';
+    // Обновляем интерфейс
+    elements.questionText.innerHTML = `<strong>${question.question}</strong>`;
+    elements.currentQuestionNum.textContent = currentQuestionIndex + 1;
     
-    // Обновление прогресса
-    const progressPercent = ((currentQuestionIndex + 1) / questions.length) * 100;
-    progressBarEl.style.width = `${progressPercent}%`;
-    currentQuestionEl.textContent = currentQuestionIndex + 1;
-    document.getElementById('totalQuestions').textContent = questions.length;
+    // Обновляем прогресс
+    const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+    elements.progressFill.style.width = `${progress}%`;
     
-    // ИИ зачитывает вопрос голосом
+    // Сбрасываем предыдущий ответ
+    elements.userAnswer.value = '';
+    elements.feedbackSection.classList.add('hidden');
+    elements.voiceStatus.textContent = 'Готов к записи. Нажмите кнопку и говорите.';
+    
+    // ИИ зачитывает вопрос
     setTimeout(() => {
-        speakText(`Вопрос номер ${currentQuestionIndex + 1}: ${question.question}`);
-    }, 800);
+        speakText(`Вопрос ${currentQuestionIndex + 1}. ${question.question}`);
+    }, 1000);
+    
+    console.log(`📝 Показываю вопрос ${currentQuestionIndex + 1}: ${question.question}`);
 }
 
-// ============================================
-// 5. РАСПОЗНАВАНИЕ РЕЧИ (Web Speech API)
-// ============================================
-
+// ==================== РАСПОЗНАВАНИЕ РЕЧИ ====================
 function initSpeechRecognition() {
-    // Проверяем поддержку браузера
-    if ('webkitSpeechRecognition' in window) {
-        recognition = new webkitSpeechRecognition();
-    } else if ('SpeechRecognition' in window) {
-        recognition = new SpeechRecognition();
-    } else {
+    console.log('🎤 Инициализирую распознавание речи...');
+    
+    // Проверяем поддержку браузером
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
         console.warn('⚠️ Браузер не поддерживает распознавание речи');
-        voiceStatus.textContent = 'Используйте текстовый ввод';
-        voiceBtn.disabled = true;
+        elements.voiceStatus.textContent = 'Голосовой ввод не поддерживается. Используйте текстовый ввод.';
+        elements.voiceBtn.disabled = true;
         return;
     }
     
+    // Создаем объект распознавания
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    
+    // Настройки
     recognition.lang = 'ru-RU';
     recognition.continuous = false;
     recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
     
-    recognition.onresult = function(event) {
+    // События
+    recognition.onstart = () => {
+        console.log('🎤 Начало распознавания...');
+        elements.voiceStatus.textContent = 'Слушаю...';
+    };
+    
+    recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        userAnswerEl.value = transcript;
-        voiceStatus.textContent = '✅ Распознано: ' + transcript.substring(0, 50);
-        console.log('🎤 Распознано:', transcript);
+        console.log('✅ Распознано:', transcript);
+        
+        // Показываем текст в поле
+        elements.userAnswer.value = transcript;
+        elements.voiceStatus.textContent = '✅ Речь распознана!';
+        
+        // Автоматически отправляем на оценку через 2 секунды
+        setTimeout(() => {
+            if (elements.userAnswer.value.trim()) {
+                submitAnswer();
+            }
+        }, 2000);
     };
     
-    recognition.onerror = function(event) {
+    recognition.onerror = (event) => {
         console.error('❌ Ошибка распознавания:', event.error);
-        voiceStatus.textContent = 'Ошибка, попробуйте снова';
+        elements.voiceStatus.textContent = 'Ошибка. Попробуйте снова.';
+        elements.recordingIndicator.classList.add('hidden');
     };
     
-    recognition.onend = function() {
+    recognition.onend = () => {
+        console.log('🛑 Распознавание завершено');
+        elements.voiceBtn.textContent = '🎤 Нажми и говори';
+        elements.recordingIndicator.classList.add('hidden');
         isRecording = false;
-        voiceBtn.textContent = '🎤 Говорить';
-        voiceBtn.style.background = '#4299e1';
     };
+    
+    console.log('✅ Распознавание речи инициализировано');
 }
 
-// ============================================
-// 6. ЗАПИСЬ ГОЛОСА
-// ============================================
-
+// ==================== ЗАПИСЬ АУДИО ====================
 async function startVoiceRecording() {
+    console.log('🔴 Начинаю запись...');
+    
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
+        // Запрашиваем доступ к микрофону
+        const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 channelCount: 1,
-                sampleRate: 16000
-            } 
+                sampleRate: 16000,
+                echoCancellation: true,
+                noiseSuppression: true
+            }
         });
         
+        // Начинаем запись
         mediaRecorder = new MediaRecorder(stream);
-        audioChunks = [];
+        const audioChunks = [];
         
         mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
@@ -144,28 +175,31 @@ async function startVoiceRecording() {
             }
         };
         
-        mediaRecorder.onstop = async () => {
-            voiceStatus.textContent = '⏳ Обработка...';
-            
-            // Используем Web Speech API для распознавания
+        mediaRecorder.onstop = () => {
+            console.log('🛑 Запись остановлена');
+            // Запускаем распознавание
             if (recognition) {
                 recognition.start();
             }
-            
-            // Останавливаем микрофон
+            // Освобождаем микрофон
             stream.getTracks().forEach(track => track.stop());
         };
         
+        // Запускаем запись
         mediaRecorder.start();
         isRecording = true;
-        voiceBtn.textContent = '⏹ Остановить';
-        voiceBtn.style.background = '#e53e3e';
-        voiceStatus.textContent = '🎤 Записываю... ГОВОРИТЕ!';
+        
+        // Обновляем интерфейс
+        elements.voiceBtn.textContent = '⏹ Остановить запись';
+        elements.voiceStatus.textContent = 'Идет запись...';
+        elements.recordingIndicator.classList.remove('hidden');
+        
+        console.log('✅ Запись начата');
         
     } catch (error) {
-        console.error('❌ Ошибка микрофона:', error);
-        voiceStatus.textContent = 'Разрешите доступ к микрофону';
-        alert('Дайте доступ к микрофону для голосового ввода');
+        console.error('❌ Ошибка доступа к микрофону:', error);
+        elements.voiceStatus.textContent = 'Разрешите доступ к микрофону';
+        alert('Для голосового ввода необходим доступ к микрофону. Разрешите доступ в настройках браузера.');
     }
 }
 
@@ -173,11 +207,12 @@ function stopVoiceRecording() {
     if (mediaRecorder && isRecording) {
         mediaRecorder.stop();
         isRecording = false;
+        elements.voiceBtn.textContent = '🎤 Нажми и говори';
     }
 }
 
 // Обработчик кнопки голоса
-voiceBtn.addEventListener('click', () => {
+elements.voiceBtn.addEventListener('click', () => {
     if (!isRecording) {
         startVoiceRecording();
     } else {
@@ -185,19 +220,19 @@ voiceBtn.addEventListener('click', () => {
     }
 });
 
-// ============================================
-// 7. СИНТЕЗ РЕЧИ (ИИ говорит)
-// ============================================
-
+// ==================== СИНТЕЗ РЕЧИ (ИИ говорит) ====================
 function speakText(text, rate = 1.0) {
+    console.log('🗣️ ИИ говорит:', text.substring(0, 50) + '...');
+    
     if (!('speechSynthesis' in window)) {
-        console.warn('⚠️ Браузер не поддерживает синтез речи');
+        console.warn('⚠️ Синтез речи не поддерживается');
         return;
     }
     
     // Останавливаем предыдущую речь
     speechSynthesis.cancel();
     
+    // Создаем utterance
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'ru-RU';
     utterance.rate = rate;
@@ -207,8 +242,8 @@ function speakText(text, rate = 1.0) {
     const voices = speechSynthesis.getVoices();
     if (voices.length > 0) {
         const russianVoice = voices.find(voice => 
-            voice.lang.startsWith('ru') || 
-            voice.name.toLowerCase().includes('russian')
+            voice.lang.startsWith('ru-RU') || 
+            voice.lang.startsWith('ru')
         );
         if (russianVoice) {
             utterance.voice = russianVoice;
@@ -216,164 +251,191 @@ function speakText(text, rate = 1.0) {
     }
     
     // Анимация аватара
-    const avatarImg = document.querySelector('.avatar-img');
-    avatarImg.classList.add('talking');
+    const avatar = document.querySelector('.avatar-img');
+    avatar.classList.add('talking');
     
+    // События
     utterance.onstart = () => {
-        console.log('🗣️ ИИ начинает говорить:', text.substring(0, 50));
+        console.log('▶️ Начало речи ИИ');
     };
     
     utterance.onend = () => {
-        console.log('✅ ИИ закончил говорить');
-        avatarImg.classList.remove('talking');
+        console.log('⏹️ Конец речи ИИ');
+        avatar.classList.remove('talking');
     };
     
     utterance.onerror = (event) => {
         console.error('❌ Ошибка синтеза речи:', event);
-        avatarImg.classList.remove('talking');
+        avatar.classList.remove('talking');
     };
     
+    // Запускаем
     speechSynthesis.speak(utterance);
 }
 
-// ============================================
-// 8. АНАЛИЗ ОТВЕТА
-// ============================================
-
-function analyzeAnswer(userAnswer) {
+// ==================== АНАЛИЗ ОТВЕТА ====================
+function analyzeAnswer(answerText) {
+    console.log('🔍 Анализирую ответ...');
+    
     const question = questions[currentQuestionIndex];
     let score = 5; // Средняя оценка
     
-    // Простой анализ длины
-    if (userAnswer.length < 30) score -= 2;
-    if (userAnswer.length > 100) score += 1;
-    if (userAnswer.length > 200) score += 1;
+    // Простой анализ
+    if (answerText.length < 30) score -= 2;
+    if (answerText.length > 100) score += 1;
+    if (answerText.length > 200) score += 1;
     
-    // Ключевые слова для IT собеседований
-    const positiveKeywords = [
-        'опыт', 'проект', 'разработка', 'команда', 
-        'результат', 'задачи', 'решил', 'улучшил',
-        'оптимизировал', 'изучил', 'внедрил'
-    ];
+    // Проверка ключевых слов
+    const keywords = ['опыт', 'проект', 'команда', 'результат', 'задачи', 'разработка'];
+    let foundKeywords = 0;
     
-    positiveKeywords.forEach(keyword => {
-        if (userAnswer.toLowerCase().includes(keyword)) {
+    keywords.forEach(keyword => {
+        if (answerText.toLowerCase().includes(keyword)) {
+            foundKeywords++;
             score += 0.5;
         }
     });
     
-    // Ограничиваем оценку 1-10
+    // Ограничиваем оценку
     score = Math.max(1, Math.min(10, Math.round(score)));
     
-    let feedback;
-    if (score >= 8) {
-        feedback = 'Отлично! Ответ структурированный и профессиональный.';
-    } else if (score >= 6) {
+    // Формируем фидбек
+    let feedback = '';
+    if (score >= 9) {
+        feedback = 'Отлично! Ответ структурированный и полный.';
+    } else if (score >= 7) {
         feedback = 'Хорошо, но можно добавить больше деталей.';
+    } else if (score >= 5) {
+        feedback = 'Неплохо, но ответ слишком общий.';
     } else {
-        feedback = 'Нужно поработать над ответом. Попробуй следовать подсказкам ниже.';
+        feedback = 'Нужно поработать над ответом.';
     }
     
     return {
         score: score,
         feedback: feedback,
-        tips: question.tips || ['Будь конкретнее', 'Приведи пример', 'Свяжи с вакансией']
+        tips: question.tips || ['Будьте конкретнее', 'Приведите примеры', 'Свяжите с вакансией']
     };
 }
 
-// ============================================
-// 9. ОБРАБОТКА ОТВЕТА С ГОЛОСОВЫМ ФИДБЕКОМ
-// ============================================
-
-function analyzeAnswerWithVoice(userAnswer) {
-    const analysis = analyzeAnswer(userAnswer);
+// ==================== ОТПРАВКА ОТВЕТА ====================
+function submitAnswer() {
+    const answerText = elements.userAnswer.value.trim();
     
-    // Озвучиваем оценку
-    const feedbackSpeech = `Ваша оценка: ${analysis.score} из 10. ${analysis.feedback}`;
-    speakText(feedbackSpeech);
-    
-    // Через 3 секунды озвучиваем подсказки
-    setTimeout(() => {
-        const tipsSpeech = `Подсказки для улучшения: ${analysis.tips.join('. ')}`;
-        speakText(tipsSpeech, 0.85);
-    }, 3500);
-    
-    return analysis;
-}
-
-// ============================================
-// 10. ОБРАБОТЧИКИ СОБЫТИЙ
-// ============================================
-
-submitBtn.addEventListener('click', () => {
-    const userAnswer = userAnswerEl.value.trim();
-    if (!userAnswer) {
-        speakText("Сначала ответьте на вопрос, пожалуйста.");
+    if (!answerText) {
+        speakText("Пожалуйста, сначала ответьте на вопрос.");
         return;
     }
     
-    const analysis = analyzeAnswerWithVoice(userAnswer);
+    console.log('📤 Отправляю ответ на анализ:', answerText.substring(0, 50) + '...');
     
-    // Показываем оценку в интерфейсе
-    scoreValueEl.textContent = `${analysis.score}/10`;
-    feedbackTextEl.textContent = analysis.feedback;
-    tipsEl.innerHTML = `<strong>Подсказки:</strong><br>${analysis.tips.join('<br>')}`;
+    // Анализируем ответ
+    const analysis = analyzeAnswer(answerText);
     
-    feedbackEl.classList.remove('hidden');
-    feedbackEl.scrollIntoView({ behavior: 'smooth' });
-});
+    // Показываем оценку
+    elements.scoreBadge.textContent = `${analysis.score}/10`;
+    elements.feedbackText.textContent = analysis.feedback;
+    
+    // Показываем советы
+    elements.tipsList.innerHTML = '';
+    analysis.tips.forEach(tip => {
+        const li = document.createElement('li');
+        li.textContent = tip;
+        elements.tipsList.appendChild(li);
+    });
+    
+    // Показываем блок с оценкой
+    elements.feedbackSection.classList.remove('hidden');
+    
+    // Прокручиваем к оценке
+    elements.feedbackSection.scrollIntoView({ behavior: 'smooth' });
+    
+    // ИИ озвучивает оценку
+    const feedbackSpeech = `Ваша оценка: ${analysis.score} из 10. ${analysis.feedback}`;
+    speakText(feedbackSpeech);
+    
+    // Через паузу озвучиваем советы
+    setTimeout(() => {
+        const tipsSpeech = `Советы для улучшения: ${analysis.tips.join('. ')}`;
+        speakText(tipsSpeech, 0.9);
+    }, analysis.feedback.length * 50 + 1000); // Динамическая пауза
+}
 
-hintBtn.addEventListener('click', () => {
-    const question = questions[currentQuestionIndex];
-    const hintSpeech = `Пример ответа: ${question.good_answer.substring(0, 150)}`;
-    speakText(hintSpeech, 0.8);
-});
-
-nextBtn.addEventListener('click', () => {
-    currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
-    updateQuestion();
-});
-
-// ============================================
-// 11. КАМЕРА (дополнительно)
-// ============================================
-
-document.getElementById('startCameraBtn')?.addEventListener('click', async () => {
+// ==================== КАМЕРА И МИКРОФОН ====================
+async function startCamera() {
+    console.log('📹 Включаю камеру...');
+    
     try {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { width: 640, height: 480 }, 
-            audio: false 
+        userVideoStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: 'user'
+            }
         });
         
-        const videoBox = document.querySelector('.video-box');
-        if (videoBox) {
-            videoBox.innerHTML = '';
-            const video = document.createElement('video');
-            video.srcObject = stream;
-            video.autoplay = true;
-            video.style.width = '100%';
-            video.style.height = '100%';
-            video.style.borderRadius = '10px';
-            videoBox.appendChild(video);
-        }
+        // Показываем видео
+        elements.userVideo.srcObject = userVideoStream;
+        elements.userVideo.style.display = 'block';
+        elements.userVideoBox.querySelector('.placeholder').style.display = 'none';
         
-        const btn = document.getElementById('startCameraBtn');
-        btn.textContent = '📹 Камера включена';
-        btn.disabled = true;
-        btn.style.background = '#48bb78';
+        // Обновляем кнопку
+        elements.startCameraBtn.textContent = '📹 Камера включена';
+        elements.startCameraBtn.disabled = true;
+        elements.toggleMicBtn.disabled = false;
+        
+        console.log('✅ Камера включена');
         
     } catch (error) {
-        console.error('Камера не доступна:', error);
-        alert('Разрешите доступ к камере или используйте без видео');
+        console.error('❌ Ошибка камеры:', error);
+        elements.voiceStatus.textContent = 'Камера недоступна';
     }
+}
+
+async function toggleMicrophone() {
+    if (!userAudioStream) {
+        // Включаем микрофон
+        try {
+            userAudioStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
+                    echoCancellation: true,
+                    noiseSuppression: true
+                }
+            });
+            elements.toggleMicBtn.textContent = '🎤 Микрофон вкл';
+            console.log('✅ Микрофон включен');
+        } catch (error) {
+            console.error('❌ Ошибка микрофона:', error);
+        }
+    } else {
+        // Выключаем микрофон
+        userAudioStream.getTracks().forEach(track => track.stop());
+        userAudioStream = null;
+        elements.toggleMicBtn.textContent = '🎤 Вкл микрофон';
+        console.log('🔇 Микрофон выключен');
+    }
+}
+
+// ==================== ОБРАБОТЧИКИ СОБЫТИЙ ====================
+elements.submitBtn.addEventListener('click', submitAnswer);
+
+elements.hintBtn.addEventListener('click', () => {
+    const question = questions[currentQuestionIndex];
+    const hintText = `Пример ответа: ${question.good_answer.substring(0, 150)}...`;
+    speakText(hintText, 0.8);
 });
 
-// ============================================
-// 12. ЗАПУСК ПРИЛОЖЕНИЯ
-// ============================================
+elements.nextBtn.addEventListener('click', () => {
+    currentQuestionIndex = (currentQuestionIndex + 1) % questions.length;
+    showQuestion();
+});
 
-async function main() {
-    console.log('🚀 Запуск ИИ-HR тренера...');
+elements.startCameraBtn.addEventListener('click', startCamera);
+elements.toggleMicBtn.addEventListener('click', toggleMicrophone);
+
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+async function initApp() {
+    console.log('🚀 Запускаю ИИ-HR тренер...');
     
     // Загружаем вопросы
     await loadQuestions();
@@ -381,20 +443,23 @@ async function main() {
     // Инициализируем распознавание речи
     initSpeechRecognition();
     
+    // Загружаем голоса для синтеза
+    if (speechSynthesis) {
+        speechSynthesis.getVoices(); // Инициализация голосов
+    }
+    
     // Приветствие
     setTimeout(() => {
-        speakText("Привет! Я Анна, ваш HR-тренер. Отвечайте на вопросы голосом или текстом.");
+        speakText("Привет! Я ваш ИИ-HR тренер. Отвечайте на вопросы голосом, и я помогу подготовиться к собеседованию.");
     }, 1500);
     
-    console.log('✅ Приложение готово');
+    console.log('✅ Приложение готово к работе!');
 }
 
-// Запускаем когда страница загружена
-document.addEventListener('DOMContentLoaded', main);
-
-// Обновляем голоса при загрузке страницы
-if (speechSynthesis) {
-    speechSynthesis.onvoiceschanged = () => {
-        console.log('Голоса загружены:', speechSynthesis.getVoices().length);
-    };
+// ==================== ЗАПУСК ПРИЛОЖЕНИЯ ====================
+// Ждем полной загрузки страницы
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
 }
