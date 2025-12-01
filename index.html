@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Видео консультация с экспертом</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        .video-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .video-box {
+            width: 400px;
+            height: 300px;
+            background: #2d2d2d;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #444;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>💬 Консультация с финансовым экспертом</h1>
+    
+    <div class="video-container">
+        <!-- Видео пользователя -->
+        <div class="video-box">
+            <div>🎥 Ваше видео появится здесь</div>
+        </div>
+        
+        <!-- Видео эксперта -->
+        <div class="video-box">
+            <div>👨‍💼 Эксперт появится здесь</div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button id="startBtn">🎤 Начать разговор</button>
+        <button id="stopBtn" disabled>⏹ Остановить</button>
+    </div>
+
+    <script>
+        // Простейший JavaScript код
+        document.getElementById('startBtn').addEventListener('click', function() {
+            alert('Скдесь будет запуск камеры и подключение к эксперту!');
+        });
+    </script>
+</body>
+</html>
