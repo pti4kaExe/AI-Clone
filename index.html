@@ -1,83 +1,150 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>🤖 ИИ-HR для подготовки к собеседованиям</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 ИИ-HR Тренер для собеседований</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <!-- Заголовок -->
-        <h1>🧑‍💼 ИИ-HR Тренер</h1>
-        <p class="subtitle">Подготовься к собеседованию как профи</p>
-        
-        <!-- Аватар HR -->
-        <div class="avatar-section">
-            <div class="avatar">
-                <div class="avatar-img">👩‍💼</div>
-                <div class="avatar-name">Анна, HR Яндекс</div>
-            </div>
-            
-            <div class="speech-bubble" id="hrQuestion">
-                Привет! Я помогу тебе подготовиться к собеседованию. 
-                Начнем с первого вопроса: <strong>"Расскажите о себе"</strong>
-            </div>
-        </div>
-        
-        <!-- Видео пользователя (пока заглушка) -->
-        <div class="user-video-placeholder">
-            <div class="video-box">🎥 Здесь будет твое видео</div>
-            <button id="startCameraBtn" class="btn">📹 Включить камеру</button>
-        </div>
-        
-        <!-- Интерфейс ответа -->
-       <!-- Интерфейс ответа -->
-<div class="response-section">
-    <h3>Твой ответ:</h3>
-    
-    <!-- Голосовое управление -->
-    <div class="voice-controls">
-        <button id="voiceBtn" class="btn voice-btn">
-            🎤 Говорить
-        </button>
-        <div class="voice-status" id="voiceStatus">
-            Нажми "Говорить" и отвечай голосом
-        </div>
-    </div>
-    
-    <!-- Или текстовый ввод -->
-    <div class="or-divider">Или напиши ответ:</div>
-    <textarea id="userAnswer" placeholder="Или напиши свой ответ здесь..."></textarea>
-    
-    <div class="buttons">
-        <button id="submitAnswer" class="btn primary">
-            ✅ Отправить и получить оценку
-        </button>
-        <button id="getHint" class="btn secondary">
-            💡 Послушать пример ответа
-        </button>
-        <button id="nextQuestion" class="btn">
-            ⏭ Следующий вопрос
-        </button>
-    </div>
-</div>
-        
-        <!-- Оценка ИИ -->
-        <div class="feedback-section hidden" id="feedback">
-            <h3>📊 Оценка ИИ-HR:</h3>
-            <div class="score">Оценка: <span id="scoreValue">0/10</span></div>
-            <div class="feedback-text" id="feedbackText"></div>
-            <div class="tips" id="tips"></div>
-        </div>
-        
-        <!-- Прогресс -->
-        <div class="progress">
-            <div class="progress-bar" id="progressBar"></div>
-            <div class="progress-text">Вопрос <span id="currentQuestion">1</span> из <span id="totalQuestions">5</span></div>
-        </div>
+        <header>
+            <h1>🧑‍💼 ИИ-HR Тренер</h1>
+            <p class="subtitle">Подготовься к собеседованию с искусственным интеллектом</p>
+        </header>
+
+        <!-- Основной контент -->
+        <main>
+            <!-- Видео конференция -->
+            <section class="conference-section">
+                <div class="video-wrapper">
+                    <!-- Видео пользователя -->
+                    <div class="video-container">
+                        <div class="video-box" id="userVideoBox">
+                            <div class="placeholder">🎥 Здесь будет ваше видео</div>
+                            <video id="userVideo" autoplay playsinline></video>
+                        </div>
+                        <div class="video-label">Вы</div>
+                    </div>
+
+                    <!-- Видео ИИ-эксперта -->
+                    <div class="video-container">
+                        <div class="video-box expert-video">
+                            <div class="avatar-img">👩‍💼</div>
+                            <div class="expert-name">Анна, HR-специалист</div>
+                        </div>
+                        <div class="video-label">ИИ-Эксперт</div>
+                    </div>
+                </div>
+
+                <!-- Управление камерой -->
+                <div class="camera-controls">
+                    <button id="startCameraBtn" class="btn camera-btn">
+                        📹 Включить камеру
+                    </button>
+                    <button id="toggleMicBtn" class="btn mic-btn" disabled>
+                        🎤 Вкл микрофон
+                    </button>
+                </div>
+            </section>
+
+            <!-- Вопрос от ИИ -->
+            <section class="question-section">
+                <div class="speech-bubble" id="hrQuestion">
+                    <div class="bubble-header">
+                        <span class="expert-tag">ИИ-Эксперт</span>
+                        <span class="question-number">Вопрос #1</span>
+                    </div>
+                    <div class="question-text" id="questionText">
+                        Привет! Я помогу тебе подготовиться к собеседованию. 
+                        Давай начнем с первого вопроса: <strong>"Расскажите о себе"</strong>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Голосовой ответ пользователя -->
+            <section class="voice-section">
+                <h3>🎤 Ответьте голосом:</h3>
+                
+                <div class="voice-controls">
+                    <button id="voiceBtn" class="btn voice-btn">
+                        🎤 Нажми и говори
+                    </button>
+                    
+                    <div class="voice-status" id="voiceStatus">
+                        Готов к записи. Нажмите кнопку и говорите чётко.
+                    </div>
+
+                    <div class="recording-indicator hidden" id="recordingIndicator">
+                        <div class="pulse"></div>
+                        <span>ИДЁТ ЗАПИСЬ... ГОВОРИТЕ!</span>
+                    </div>
+
+                    <div class="transcript-box">
+                        <div class="transcript-header">📝 Расшифровка вашего ответа:</div>
+                        <textarea id="userAnswer" placeholder="Здесь появится текст вашего голосового ответа..." readonly></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Кнопки управления -->
+            <section class="controls-section">
+                <div class="buttons">
+                    <button id="submitAnswer" class="btn primary-btn">
+                        ✅ Отправить ответ на оценку
+                    </button>
+                    <button id="getHint" class="btn secondary-btn">
+                        💡 Послушать пример ответа
+                    </button>
+                    <button id="nextQuestion" class="btn next-btn">
+                        ⏭ Следующий вопрос
+                    </button>
+                </div>
+            </section>
+
+            <!-- Оценка ИИ -->
+            <section class="feedback-section hidden" id="feedbackSection">
+                <div class="feedback-header">
+                    <h3>📊 Оценка ИИ-HR</h3>
+                    <div class="score-badge" id="scoreBadge">0/10</div>
+                </div>
+                
+                <div class="feedback-content">
+                    <div class="feedback-text" id="feedbackText">
+                        Здесь появится развернутая оценка вашего ответа...
+                    </div>
+                    
+                    <div class="tips-box">
+                        <div class="tips-header">💡 Советы для улучшения:</div>
+                        <ul class="tips-list" id="tipsList">
+                            <!-- Советы появятся здесь -->
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Прогресс -->
+            <section class="progress-section">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text">
+                    Вопрос <span id="currentQuestionNum">1</span> из <span id="totalQuestions">5</span>
+                </div>
+            </section>
+        </main>
+
+        <!-- Подвал -->
+        <footer>
+            <p class="disclaimer">
+                ⚠️ Это тренировочный ИИ-помощник. Для реальных собеседований рекомендуется консультация с HR-специалистом.
+            </p>
+        </footer>
     </div>
 
+    <!-- Подключаем JavaScript -->
     <script src="questions.json"></script>
     <script src="script.js"></script>
 </body>
 </html>
-
