@@ -30,16 +30,36 @@
         </div>
         
         <!-- Интерфейс ответа -->
-        <div class="response-section">
-            <h3>Твой ответ:</h3>
-            <textarea id="userAnswer" placeholder="Напиши свой ответ здесь..."></textarea>
-            
-            <div class="buttons">
-                <button id="submitAnswer" class="btn primary">✅ Отправить ответ</button>
-                <button id="getHint" class="btn secondary">💡 Получить подсказку</button>
-                <button id="nextQuestion" class="btn">⏭ Следующий вопрос</button>
-            </div>
+       <!-- Интерфейс ответа -->
+<div class="response-section">
+    <h3>Твой ответ:</h3>
+    
+    <!-- Голосовое управление -->
+    <div class="voice-controls">
+        <button id="voiceBtn" class="btn voice-btn">
+            🎤 Говорить
+        </button>
+        <div class="voice-status" id="voiceStatus">
+            Нажми "Говорить" и отвечай голосом
         </div>
+    </div>
+    
+    <!-- Или текстовый ввод -->
+    <div class="or-divider">Или напиши ответ:</div>
+    <textarea id="userAnswer" placeholder="Или напиши свой ответ здесь..."></textarea>
+    
+    <div class="buttons">
+        <button id="submitAnswer" class="btn primary">
+            ✅ Отправить и получить оценку
+        </button>
+        <button id="getHint" class="btn secondary">
+            💡 Послушать пример ответа
+        </button>
+        <button id="nextQuestion" class="btn">
+            ⏭ Следующий вопрос
+        </button>
+    </div>
+</div>
         
         <!-- Оценка ИИ -->
         <div class="feedback-section hidden" id="feedback">
@@ -60,3 +80,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+
